@@ -8,7 +8,27 @@
 </head>
 
 <body>
+  <input type="file" accept="image/*" id="photo">
+  <pre id="result"></pre>
 
+  <script>
+    document.querySelector("#photo").addEventListener("change", async (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const image = reader.result.split(",")[1]
+        const res = await fetch("/.netlify/functions/read-list", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ image, mediaType: file.type }),
+        })
+        document.querySelector("#result").textContent = JSON.stringify(await res.json(), null, 2)
+      }
+      reader.readAsDataURL(file)
+    })
+  </script>
 </body>
 
 </html>
