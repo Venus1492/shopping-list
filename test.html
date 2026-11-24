@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+
+<body>
+  <input type="file" accept="image/*">
+  <p id="status"></p>
+  <img src="" alt="">
+  <pre></pre>
+
+  <script>
+    const file = document.querySelector('input')
+    const out = document.querySelector('img')
+    const status = document.querySelector('#status')
+
+    file.addEventListener('change', async (e) => {
+      out.src = URL.createObjectURL(e.target.files[0])
+
+      const result = await Tesseract.recognize(e.target.files[0], 'eng')
+
+      console.log(result.data.text)
+    })
+
+
+  </script>
+
+</body>
+
+</html>
