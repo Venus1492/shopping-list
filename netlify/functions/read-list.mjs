@@ -21,7 +21,7 @@ export default async (req) => {
     },
     body: JSON.stringify({
       model: "claude-haiku-5-5",
-      max_tokens: 1000,
+      max_tokens: 4000,
       messages: [{
         role: "user",
         content: [
@@ -37,7 +37,14 @@ export default async (req) => {
   }
 
   const data = await apiRes.json()
-  const text = data.content[0].text
+
+  // Find the text part of the reply instead of assuming it comes first
+  const block = data.content?.find((b) => b.type === "text")
+  if (!block) {
+    return Response.json({ error: "No text in reply", stop_reason: data.stop_reason, raw: data }, { status: 502 })
+  }
+
+  const text = block.text
   const clean = text.replace(/```json|```/g, "").trim()
   try {
     return Response.json({ items: JSON.parse(clean) })
