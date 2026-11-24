@@ -5,42 +5,175 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shopping list</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 30rem;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    input {
+      font-size: 16px;
+    }
+
+
+    li {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 0.4rem 0;
+    }
+
+    ul {
+      padding: 0;
+      list-style: none;
+    }
+
+    label {
+      flex: 1;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .done {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+  </style>
 </head>
 
 <body>
-  <input type="file" accept="image/*" id="photo">
-  <pre id="result"></pre>
+  <h1>Shopping List</h1>
+
+  <form id="add-form">
+    <input id="name" placeholder="Item" autocomplete="off">
+    <input id="qty" placeholder="Qty" size="6" autocomplete="off">
+    <button>Add</button>
+  </form>
+
+  <p><label>Add from a photo: <input type="file" accept="image/*" id="photo"></label></p>
+  <p id="status"></p>
+
+  <section id="review" hidden>
+    <h2>Check what was read</h2>
+    <ul id="review-list"></ul>
+    <button id="add-all">Add all to list</button>
+    <button id="cancel">Cancel</button>
+  </section>
+
+  <ul id="list"></ul>
 
 
   <script>
-    // Shrinks a photo so its longest side is at most maxSize pixels.
-    // Returns the image as base64 text (what the function expects).
-    async function resizeImage(file, maxSize = 1600) {
-      // Decodes the file and applies the phone's rotation automatically
-      const bitmap = await createImageBitmap(file)
+    const $ = (selector) => document.querySelector(selector)
 
-      // Scale down only, never up
+    let list = JSON.parse(localStorage.getItem("shopping") || "[]")
+    const save = () => localStorage.setItem("shopping", JSON.stringify(list))
+
+    function addItem(name, qty) {
+      list.push({ id: crypto.randomUUID(), name, qty, done: false })
+    }
+
+    function render() {
+      const ul = $("#list")
+      ul.innerHTML = ""
+
+      list.forEach((item) => {
+        const li = document.createElement("li")
+
+        const box = document.createElement("input")
+        box.type = "checkbox"
+        box.checked = item.done
+        box.addEventListener("change", () => {
+          item.done = box.checked
+          save()
+          render()
+        })
+
+        const text = document.createElement("span")
+        text.textContent = item.qty ? `${item.name} (${item.qty})` : item.name
+        text.classList.toggle("done", item.done)
+
+        const label = document.createElement("label")
+        label.append(box, text)
+
+        const del = document.createElement("button")
+        del.textContent = "x"
+        del.setAttribute("aria-label", "Delete " + item.name)
+        del.addEventListener("click", () => {
+          list = list.filter((i) => i.id !== item.id)
+          save()
+          render()
+        })
+
+        li.append(label, del)
+        ul.append(li)
+
+      })
+    }
+
+    $("#add-form").addEventListener("submit", (e) => {
+      e.preventDefault()                       // stop the page reloading
+      const name = $("#name").value.trim()
+      if (!name) return
+      addItem(name, $("#qty").value.trim())
+      save()
+      render()
+      e.target.reset()
+      $("#name").focus()
+    })
+
+    async function resizeImage(file, maxSize = 1600) {
+      const bitmap = await createImageBitmap(file)
       const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height))
       const width = Math.round(bitmap.width * scale)
       const height = Math.round(bitmap.height * scale)
-
-      // Draw the photo onto a canvas of the smaller size
       const canvas = document.createElement("canvas")
       canvas.width = width
       canvas.height = height
       canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height)
-
-      // Export as JPEG at 80% quality and drop the "data:image/jpeg;base64," start
       return canvas.toDataURL("image/jpeg", 0.8).split(",")[1]
     }
 
-    document.querySelector("#photo").addEventListener("change", async (e) => {
+    let pending = []   // items read from the photo, waiting to be confirmed
+
+    function renderReview() {
+      const ul = $("#review-list")
+      ul.innerHTML = ""
+
+      pending.forEach((item, index) => {
+        const li = document.createElement("li")
+
+        const name = document.createElement("input")
+        name.value = item.name
+        name.addEventListener("input", () => (item.name = name.value))
+
+        const qty = document.createElement("input")
+        qty.value = item.qty
+        qty.size = 6
+        qty.addEventListener("input", () => (item.qty = qty.value))
+
+        const del = document.createElement("button")
+        del.textContent = "x"
+        del.addEventListener("click", () => {
+          pending.splice(index, 1)
+          renderReview()
+        })
+
+        li.append(name, qty, del)
+        ul.append(li)
+      })
+
+      $("#review").hidden = pending.length === 0
+    }
+
+    $("#photo").addEventListener("change", async (e) => {
       const file = e.target.files[0]
       if (!file) return
 
-      const result = document.querySelector("#result")
-      result.textContent = "Reading..."
-
+      $("#status").textContent = "Reading..."
       try {
         const image = await resizeImage(file)
         const res = await fetch("/.netlify/functions/read-list", {
@@ -48,11 +181,37 @@
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ image, mediaType: "image/jpeg" }),
         })
-        result.textContent = JSON.stringify(await res.json(), null, 2)
+        const data = await res.json()
+        if (!res.ok || data.error) throw new Error(data.error || "Request failed")
+
+        // Turn { name, quantity, unit } into { name, qty: "2 kg" }
+        pending = data.items.map((i) => ({
+          name: i.name,
+          qty: [i.quantity, i.unit].filter(Boolean).join(" "),
+        }))
+        renderReview()
+        $("#status").textContent = ""
       } catch (err) {
-        result.textContent = "Something went wrong: " + err.message
+        $("#status").textContent = "Couldn't read the photo: " + err.message
       }
+      e.target.value = ""   // lets you choose the same photo again
     })
+
+    $("#add-all").addEventListener("click", () => {
+      pending.filter((i) => i.name.trim()).forEach((i) => addItem(i.name.trim(), i.qty.trim()))
+      pending = []
+      save()
+      render()
+      renderReview()
+    })
+
+    $("#cancel").addEventListener("click", () => {
+      pending = []
+      renderReview()
+    })
+
+    render()
+
   </script>
 
 </body>
