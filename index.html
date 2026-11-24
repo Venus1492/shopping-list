@@ -11,24 +11,50 @@
   <input type="file" accept="image/*" id="photo">
   <pre id="result"></pre>
 
+
   <script>
+    // Shrinks a photo so its longest side is at most maxSize pixels.
+    // Returns the image as base64 text (what the function expects).
+    async function resizeImage(file, maxSize = 1600) {
+      // Decodes the file and applies the phone's rotation automatically
+      const bitmap = await createImageBitmap(file)
+
+      // Scale down only, never up
+      const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height))
+      const width = Math.round(bitmap.width * scale)
+      const height = Math.round(bitmap.height * scale)
+
+      // Draw the photo onto a canvas of the smaller size
+      const canvas = document.createElement("canvas")
+      canvas.width = width
+      canvas.height = height
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height)
+
+      // Export as JPEG at 80% quality and drop the "data:image/jpeg;base64," start
+      return canvas.toDataURL("image/jpeg", 0.8).split(",")[1]
+    }
+
     document.querySelector("#photo").addEventListener("change", async (e) => {
       const file = e.target.files[0]
       if (!file) return
 
-      const reader = new FileReader()
-      reader.onload = async () => {
-        const image = reader.result.split(",")[1]
+      const result = document.querySelector("#result")
+      result.textContent = "Reading..."
+
+      try {
+        const image = await resizeImage(file)
         const res = await fetch("/.netlify/functions/read-list", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ image, mediaType: file.type }),
+          body: JSON.stringify({ image, mediaType: "image/jpeg" }),
         })
-        document.querySelector("#result").textContent = JSON.stringify(await res.json(), null, 2)
+        result.textContent = JSON.stringify(await res.json(), null, 2)
+      } catch (err) {
+        result.textContent = "Something went wrong: " + err.message
       }
-      reader.readAsDataURL(file)
     })
   </script>
+
 </body>
 
 </html>
