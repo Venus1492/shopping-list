@@ -169,6 +169,16 @@
       $("#review").hidden = pending.length === 0
     }
 
+
+    function getPassword() {
+      let pw = localStorage.getItem("appPassword")
+      if (!pw) {
+        pw = prompt("Password:")
+        if (pw) localStorage.setItem("appPassword", pw)
+      }
+      return pw
+    }
+
     $("#photo").addEventListener("change", async (e) => {
       const file = e.target.files[0]
       if (!file) return
@@ -178,7 +188,7 @@
         const image = await resizeImage(file)
         const res = await fetch("/.netlify/functions/read-list", {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", "x-app-password": getPassword() },
           body: JSON.stringify({ image, mediaType: "image/jpeg" }),
         })
         const data = await res.json()
@@ -192,9 +202,10 @@
         renderReview()
         $("#status").textContent = ""
       } catch (err) {
+        localStorage.removeItem("appPassword")
         $("#status").textContent = "Couldn't read the photo: " + err.message
       }
-      e.target.value = ""   // lets you choose the same photo again
+      e.target.value = ""
     })
 
     $("#add-all").addEventListener("click", () => {

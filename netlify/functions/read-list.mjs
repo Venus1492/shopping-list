@@ -9,8 +9,17 @@ export default async (req) => {
     return new Response("POST only", { status: 405 })
   }
 
+  const password = Netlify.env.get("APP_PASSWORD")
+  if (!password || req.headers.get("x-app-password") !== password) {
+    return Response.json({ error: "Wrong or missing password" }, { status: 401 })
+  }
+
   const { image, mediaType } = await req.json()
   if (!image) return Response.json({ error: "No image" }, { status: 400 })
+
+  if (image.length > 3_000_000) {
+    return Response.json({ error: "Image too large" }, { status: 413 })
+  }
 
   const apiRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
