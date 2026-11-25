@@ -6,17 +6,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shopping list</title>
   <style>
+    :root {
+      --green: linear-gradient(0deg, rgba(20, 167, 62, 1) 0%, rgba(102, 247, 113, 1) 100%);
+      --red: linear-gradient(0deg, rgba(200, 30, 30, 1) 0%, rgba(255, 90, 90, 1) 100%);
+    }
+
     body {
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      min-height: 100vh;
+      min-height: 100dvh;
+      max-width: 32rem;
+      margin: 0 auto;
+      padding: 2rem 1rem 1rem;
       font-family: sans-serif;
-      max-width: 30rem;
-      margin: 2rem auto;
-      padding: 0 1rem;
+    }
+
+    h1 {
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      color: black;
+      font-size: 16px;
+      font-weight: 400;
     }
 
     input {
       font-size: 16px;
     }
 
+    ul {
+      padding: 0;
+      list-style: none;
+    }
 
     li {
       display: flex;
@@ -25,27 +46,206 @@
       margin: 0.4rem 0;
     }
 
-    ul {
-      padding: 0;
-      list-style: none;
+    form button,
+    .photo-btn {
+      display: inline-flex;
+      align-items: center;
+      font-family: inherit;
+      font-weight: 500;
+      font-size: 16px;
+      padding: 0.7em 1.4em 0.7em 1.1em;
+      color: white;
+      background: var(--green);
+      border: none;
+      box-shadow: 0 0.7em 1.5em -0.5em #14a73e98;
+      letter-spacing: 0.05em;
+      border-radius: 20em;
+      cursor: pointer;
     }
 
-    label {
-      flex: 1;
+    form button:hover,
+    .photo-btn:hover {
+      box-shadow: 0 0.5em 1.5em -0.5em #14a73e98;
+    }
+
+    form button:active,
+    .photo-btn:active {
+      box-shadow: 0 0.3em 1em -0.5em #14a73e98;
+    }
+
+    #add-form {
       display: flex;
-      gap: 0.5rem;
       align-items: center;
+      gap: 0.5rem;
+    }
+
+    #add-form input {
+      border: 2px solid rgba(20, 167, 62, 1);
+      border-radius: 10px;
+    }
+
+    #add-form #name {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #add-form #qty {
+      width: 5rem;
+    }
+
+    #add-form button {
+      flex-shrink: 0;
+    }
+
+    .photo-btn {
+      gap: 0.5rem;
+      margin: 4% 0;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex: 1;
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .container input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+    }
+
+    .checkmark {
+      --clr: #14a73e;
+      position: relative;
+      flex-shrink: 0;
+      height: 1.3em;
+      width: 1.3em;
+      background-color: #ccc;
+      border-radius: 50%;
+      transition: 300ms;
+    }
+
+    .container input:checked~.checkmark {
+      background-image: var(--green);
+      border-radius: 0.5rem;
+      animation: pulse 500ms ease-in-out;
+    }
+
+    .container input:focus-visible~.checkmark {
+      outline: 2px solid var(--clr);
+      outline-offset: 2px;
+    }
+
+    .checkmark::after {
+      content: "";
+      position: absolute;
+      display: none;
+      left: 0.45em;
+      top: 0.25em;
+      width: 0.25em;
+      height: 0.5em;
+      border: solid #e0e0e2;
+      border-width: 0 0.15em 0.15em 0;
+      transform: rotate(45deg);
+    }
+
+    .container input:checked~.checkmark::after {
+      display: block;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 #14a73e90;
+        rotate: 20deg;
+      }
+
+      50% {
+        rotate: -20deg;
+      }
+
+      75% {
+        box-shadow: 0 0 0 10px #14a73e60;
+      }
+
+      100% {
+        box-shadow: 0 0 0 13px #14a73e30;
+        rotate: 0;
+      }
     }
 
     .done {
       text-decoration: line-through;
       opacity: 0.6;
     }
+
+    li>button,
+    .clear-btn {
+      color: white;
+      background: var(--red);
+      border: none;
+      box-shadow: 0 0.4em 1em -0.4em #c81e1e98;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    li>button:hover,
+    .clear-btn:hover {
+      box-shadow: 0 0.3em 1em -0.4em #c81e1e98;
+    }
+
+    li>button:active,
+    .clear-btn:active {
+      transform: scale(0.92);
+    }
+
+    li>button {
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      width: 1.8rem;
+      height: 1.8rem;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .clear-btn {
+      margin: auto auto 0;
+      padding: 0.7em 1.4em;
+      border-radius: 20em;
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .photo-btn {
+      align-self: flex-start;
+    }
+
+    #list {
+      margin-bottom: 1.5rem;
+    }
   </style>
 </head>
 
 <body>
-  <h1>Shopping List</h1>
+  <h1>...to the aisles!</h1>
 
   <form id="add-form">
     <input id="name" placeholder="Item" autocomplete="off">
@@ -53,7 +253,11 @@
     <button>Add</button>
   </form>
 
-  <p><label>Add from a photo: <input type="file" accept="image/*" id="photo"></label></p>
+  <label for="photo" class="photo-btn">
+    <img src="upload.png" alt="" width="32" height="32">
+    <span>Upload your list</span>
+  </label>
+  <input type="file" accept="image/*" id="photo" class="visually-hidden">
   <p id="status"></p>
 
   <section id="review" hidden>
@@ -65,11 +269,14 @@
 
   <ul id="list"></ul>
 
+  <button id="clear-all" class="clear-btn" hidden>Clear all</button>
 
   <script>
     const $ = (selector) => document.querySelector(selector)
 
     let list = JSON.parse(localStorage.getItem("shopping") || "[]")
+    let pending = []
+
     const save = () => localStorage.setItem("shopping", JSON.stringify(list))
 
     function addItem(name, qty) {
@@ -83,21 +290,25 @@
       list.forEach((item) => {
         const li = document.createElement("li")
 
+        const text = document.createElement("span")
+        text.textContent = item.qty ? `${item.name} (${item.qty})` : item.name
+        text.classList.toggle("done", item.done)
+
         const box = document.createElement("input")
         box.type = "checkbox"
         box.checked = item.done
         box.addEventListener("change", () => {
           item.done = box.checked
+          text.classList.toggle("done", item.done)
           save()
-          render()
         })
 
-        const text = document.createElement("span")
-        text.textContent = item.qty ? `${item.name} (${item.qty})` : item.name
-        text.classList.toggle("done", item.done)
+        const checkmark = document.createElement("span")
+        checkmark.className = "checkmark"
 
         const label = document.createElement("label")
-        label.append(box, text)
+        label.className = "container"
+        label.append(box, checkmark, text)
 
         const del = document.createElement("button")
         del.textContent = "x"
@@ -110,34 +321,10 @@
 
         li.append(label, del)
         ul.append(li)
-
       })
+
+      $("#clear-all").hidden = list.length === 0
     }
-
-    $("#add-form").addEventListener("submit", (e) => {
-      e.preventDefault()                       // stop the page reloading
-      const name = $("#name").value.trim()
-      if (!name) return
-      addItem(name, $("#qty").value.trim())
-      save()
-      render()
-      e.target.reset()
-      $("#name").focus()
-    })
-
-    async function resizeImage(file, maxSize = 1600) {
-      const bitmap = await createImageBitmap(file)
-      const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height))
-      const width = Math.round(bitmap.width * scale)
-      const height = Math.round(bitmap.height * scale)
-      const canvas = document.createElement("canvas")
-      canvas.width = width
-      canvas.height = height
-      canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height)
-      return canvas.toDataURL("image/jpeg", 0.8).split(",")[1]
-    }
-
-    let pending = []   // items read from the photo, waiting to be confirmed
 
     function renderReview() {
       const ul = $("#review-list")
@@ -169,6 +356,17 @@
       $("#review").hidden = pending.length === 0
     }
 
+    async function resizeImage(file, maxSize = 1600) {
+      const bitmap = await createImageBitmap(file)
+      const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height))
+      const width = Math.round(bitmap.width * scale)
+      const height = Math.round(bitmap.height * scale)
+      const canvas = document.createElement("canvas")
+      canvas.width = width
+      canvas.height = height
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height)
+      return canvas.toDataURL("image/jpeg", 0.8).split(",")[1]
+    }
 
     function getPassword() {
       let pw = localStorage.getItem("appPassword")
@@ -178,6 +376,17 @@
       }
       return pw
     }
+
+    $("#add-form").addEventListener("submit", (e) => {
+      e.preventDefault()
+      const name = $("#name").value.trim()
+      if (!name) return
+      addItem(name, $("#qty").value.trim())
+      save()
+      render()
+      e.target.reset()
+      $("#name").focus()
+    })
 
     $("#photo").addEventListener("change", async (e) => {
       const file = e.target.files[0]
@@ -194,7 +403,6 @@
         const data = await res.json()
         if (!res.ok || data.error) throw new Error(data.error || "Request failed")
 
-        // Turn { name, quantity, unit } into { name, qty: "2 kg" }
         pending = data.items.map((i) => ({
           name: i.name,
           qty: [i.quantity, i.unit].filter(Boolean).join(" "),
@@ -221,10 +429,16 @@
       renderReview()
     })
 
+    $("#clear-all").addEventListener("click", () => {
+      if (!list.length) return
+      if (!confirm("Clear the whole list?")) return
+      list = []
+      save()
+      render()
+    })
+
     render()
-
   </script>
-
 </body>
 
 </html>
